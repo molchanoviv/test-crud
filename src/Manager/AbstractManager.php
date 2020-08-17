@@ -19,9 +19,6 @@ use Doctrine\ORM\ORMInvalidArgumentException;
  */
 abstract class AbstractManager
 {
-    /**
-     * @var EntityManagerInterface
-     */
     protected EntityManagerInterface $entityManager;
 
     abstract public function getEntityClassName(): string;
@@ -117,6 +114,7 @@ abstract class AbstractManager
     }
 
     /** @noinspection MoreThanThreeArgumentsInspection */
+
     /**
      * @return array
      */
@@ -149,8 +147,6 @@ abstract class AbstractManager
     }
 
     /**
-     * @param EntityManagerInterface $entityManager
-     *
      * @return AbstractManager
      */
     public function setEntityManager(EntityManagerInterface $entityManager): self

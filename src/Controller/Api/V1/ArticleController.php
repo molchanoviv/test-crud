@@ -16,13 +16,13 @@ use Doctrine\ORM\ORMInvalidArgumentException;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Annotation\Security as OASecurity;
 use OpenApi\Annotations as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Symfony\Component\Form\Exception\AlreadySubmittedException;
 use Symfony\Component\Form\Exception\LogicException;
 use Symfony\Component\HttpFoundation\Request;
-use Nelmio\ApiDocBundle\Annotation\Security as OASecurity;
 
 /**
  * App\Controller\Api\V1\ArticleController
@@ -81,7 +81,15 @@ class ArticleController extends AbstractFOSRestController
     {
         $orderByParams = [];
         if ($request->query->has('orderBy')) {
-            $orderByParams[$request->get('orderBy', 'id')] = $request->get('orderDestination', 'ACS');
+            $orderByParam = $request->get('orderBy', 'id');
+            if (!in_array($orderByParam, Article::getFields(), true)) {
+                throw new \InvalidArgumentException(sprintf('Field %s doesn\'t exist in the article', $orderByParam));
+            }
+            $destination = strtoupper($request->get('orderDestination', 'ACS'));
+            if (!in_array($destination, ['ASC', 'DESC'])) {
+                throw new \InvalidArgumentException('Unknown sorting destination');
+            }
+            $orderByParams[$orderByParam] = $destination;
         }
 
         return $this->articleManager->findBy(
@@ -194,7 +202,7 @@ class ArticleController extends AbstractFOSRestController
     public function putArticle(Request $request, Article $article)
     {
         $form = $this->createForm(ArticleType::class, $article, ['method' => Request::METHOD_PUT]);
-        $form->handleRequest($request);
+        $form->submit(json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR), false);
         if ($form->isSubmitted() && $form->isValid()) {
             $this->articleManager->save($article);
 

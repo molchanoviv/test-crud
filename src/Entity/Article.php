@@ -21,8 +21,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Article
 {
     /**
-     * @var int|null
-     *
      * @ORM\Id()
      * @ORM\GeneratedValue(strategy="AUTO")
      * @ORM\Column(type="integer")
@@ -33,7 +31,6 @@ class Article
     protected ?int $id;
 
     /**
-     * @var string|null
      * @ORM\Column(type="string", name="title", nullable=true, length=255)
      *
      * @JMS\Expose()
@@ -44,8 +41,6 @@ class Article
     protected ?string $title;
 
     /**
-     * @var \DateTime|null
-     *
      * @ORM\Column(type="datetime", name="created_at", nullable=true)
      * @Gedmo\Timestampable(on="create")
      *
@@ -55,8 +50,6 @@ class Article
     protected ?\DateTime $createdAt;
 
     /**
-     * @var \DateTime|null
-     *
      * @ORM\Column(type="datetime", name="updated_at", nullable=true)
      * @Gedmo\Timestampable(on="update")
      *
@@ -66,7 +59,6 @@ class Article
     protected ?\DateTime $updatedAt;
 
     /**
-     * @var string|null
      * @ORM\Column(type="text", name="body", nullable=true)
      *
      * @JMS\Expose()
@@ -76,55 +68,31 @@ class Article
      */
     protected ?string $body;
 
-    /**
-     * @return int|null
-     */
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    /**
-     * @param int|null $id
-     *
-     * @return void
-     */
     public function setId(?int $id): void
     {
         $this->id = $id;
     }
 
-    /**
-     * @return string|null
-     */
     public function getTitle(): ?string
     {
         return $this->title;
     }
 
-    /**
-     * @param string|null $title
-     *
-     * @return void
-     */
     public function setTitle(?string $title): void
     {
         $this->title = $title;
     }
 
-    /**
-     * @return string|null
-     */
     public function getBody(): ?string
     {
         return $this->body;
     }
 
-    /**
-     * @param string|null $body
-     *
-     * @return void
-     */
     public function setBody(?string $body): void
     {
         $this->body = $body;
@@ -148,5 +116,10 @@ class Article
     public function setUpdatedAt(?\DateTime $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
+    }
+
+    public static function getFields(): array
+    {
+        return ['id', 'title', 'body', 'createdAt', 'updatedAt'];
     }
 }
