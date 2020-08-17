@@ -1,0 +1,111 @@
+#!/bin/bash
+
+PROJECT=`php -r "echo dirname(dirname(realpath('$0')));"`
+STAGED_FILES_CMD=`git diff --cached --name-only --diff-filter=ACMR HEAD | grep \\\\.php`
+TWIG_FILES=`git diff --cached --name-only --diff-filter=ACMR HEAD | grep \\\\.twig`
+TMP_DIR="var/tmp"
+error='\e[1;41m'
+info='\e[0;93m'
+NC='\e[0m'
+
+# Determine if a file list is passed
+if [ "$#" -eq 1 ]
+then
+    oIFS=$IFS
+    IFS='
+    '
+    SFILES="$1"
+    IFS=$oIFS
+fi
+SFILES=${SFILES:-$STAGED_FILES_CMD}
+
+# Quick PHP Lint to check for php parsing problems
+echo -e "${info}Checking for PHP Syntax errors...${NC}"
+for FILE in $SFILES
+do
+    php -l -d display_errors=0 $PROJECT/$FILE
+    if [ $? != 0 ]
+    then
+        echo -e "${error}Please fix php lint errors before committing!${NC}"
+        exit 1
+    fi
+    FILES="$FILES $PROJECT/$FILE"
+done
+
+# Verify we haven't broken our code style
+rm -rf $TMP_DIR
+if [ "$FILES" != "" ]
+then
+    echo -e "${info}Running PHP Code Style Fixer...${NC}"
+
+    # copy to a temp location in case command fails
+    mkdir -p $TMP_DIR
+    for FILE in $SFILES
+    do
+        mkdir -p $TMP_DIR/$(dirname $FILE)
+        git show :$FILE > $TMP_DIR/$FILE
+    done
+    php bin/php-cs-fixer fix $TMP_DIR --dry-run --rules=@Symfony,-phpdoc_no_empty_return,-class_keyword_remove,-phpdoc_summary,-yoda_style --verbose --show-progress=estimating
+    RETVAL=$?
+
+    rm -rf $TMP_DIR
+    rm $PROJECT/.php_cs.cache
+
+    if [ $RETVAL != 0 ]
+    then
+        echo -e "${error}Please fix code style errors before committing!${NC}"
+        exit 1
+    fi
+fi
+
+# Verify we haven't add new mess to code
+#rm -rf $TMP_DIR
+#if [ "$FILES" != "" ]
+#then
+#    echo -e "${info}Running PHP Mess Detector...${NC}"
+#
+#    # copy to a temp location in case command fails
+#    mkdir -p $TMP_DIR
+#    for FILE in $SFILES
+#    do
+#        mkdir -p $TMP_DIR/$(dirname $FILE)
+#        git show :$FILE > $TMP_DIR/$FILE
+#    done
+#    php bin/phpmd $TMP_DIR text cleancode,unusedcode,naming,design,controversial --exclude=app
+#    RETVAL=$?
+#
+#    rm -rf $TMP_DIR
+#
+#    if [ $RETVAL != 0 ]
+#    then
+#        echo -e "${error}Please fix code style errors before committing!${NC}"
+#        exit 1
+#    fi
+#fi
+
+
+#Verify Twig Lint
+#if [ "$TWIG_FILES" != "" ]
+#then
+#    echo -e "${info}Running Twig Lint${NC}"
+#    for FILE in $TWIG_FILES
+#    do
+#        php bin/console lint:twig $FILE
+#        if [ $? != 0 ]
+#        then
+#            echo -e "${error}Please fix failing twig lint tests before committing!${NC}"
+#            exit 1
+#        fi
+#    done
+#fi
+
+Verify Doctrine Schema
+echo -e "${info}Running doctrine:schema:validate${NC}"
+php bin/console doctrine:schema:validate --skip-sync
+if [ $? != 0 ]
+then
+    echo -e "${error}Please fix doctrine schema before committing!${NC}"
+    exit 1
+fi
+
+exit 0
